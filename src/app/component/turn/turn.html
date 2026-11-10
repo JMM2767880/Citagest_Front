@@ -1,0 +1,277 @@
+<div class="turnos-page">
+  <div class="turnos-header">
+    <div class="turnos-header__text">
+      <h1>Gestión de Turnos</h1>
+      <p>Controla y gestiona la atención de citas en tu mesa</p>
+    </div>
+  </div>
+
+  <div class="turnos-toolbar">
+    <div class="turnos-toolbar__left">
+      <button class="date-filter" type="button">
+        <span class="date-filter__icon">📅</span>
+        <span>{{ now.getDate() }} de {{ monthSelect[now.getMonth()].month }} de {{ now.getFullYear() }}</span>
+      </button>
+    </div>
+
+    <div class="turnos-toolbar__right">
+      <input
+        type="text"
+        class="search-input"
+        (keyup)="searchDate($event)"
+        placeholder="Buscar por cliente, ticket o hora..."
+      />
+    </div>
+  </div>
+
+  <div class="turnos-summary">
+    <div class="summary-card">
+      <span class="summary-card__label">Pendientes</span>
+      <strong>{{ totalTurnPending }}</strong>
+    </div>
+
+    <div class="summary-card summary-card--active">
+      <span class="summary-card__label">En atención</span>
+      <strong>{{ totalTurnCurrent }}</strong>
+    </div>
+
+    <div class="summary-card">
+      <span class="summary-card__label">Sin asignar</span>
+      <strong>{{ totalTurnNotAssign }}</strong>
+    </div>
+
+    <!--<div class="summary-card">
+      <span class="summary-card__label">Descartadas</span>
+      <strong>1</strong>
+    </div>-->
+  </div>
+
+  @if (currentTurn != '' && currentTurn != null) {
+    <div class="current-turn-card">
+        <div class="current-turn-card__left">
+        <span class="current-turn-card__label">Turno actual</span>
+
+        <div class="current-turn-card__main">
+            <div class="ticket-badge">{{ currentTurn?.date?.dateCode }}</div>
+
+            <div class="current-turn-card__info">
+            <h2>{{ currentTurn?.date?.nameClient }}</h2>
+            <p>{{ currentTurn?.date?.dateTime?.substr(11, 5) }} · {{ userLogged?.department?.name }}</p>
+            </div>
+
+            <span class="status-badge status-badge--attention">En atención</span>
+        </div>
+        </div>
+
+        <div class="current-turn-card__actions">
+        <button class="btn btn-danger" type="button" (click)="openConfirmModal(currentTurn, 'discard')">Descartar</button>
+        <button class="btn btn-success" type="button" (click)="openConfirmModal(currentTurn, 'finish')">Finalizar</button>
+        </div>
+    </div>
+  }
+
+  <div class="turnos-content">
+    <div class="turnos-list-header">
+      <h3>Citas del día</h3>
+      <span>{{ turnsList.length }} turnos</span>
+    </div>
+
+    <div class="turnos-list">
+    @for (turn of turnsList; track $index) {
+        <div class="turno-card" 
+        [class.turno-card--pending]="turn?.date?.nameClient !== '' && turn?.state?.id == 6" 
+        [class.turno-card--attention]="turn?.date?.nameClient !== '' && turn?.state?.id == 7" 
+        [class.turno-card--unassigned]="turn?.date?.nameClient === ''">
+        <div class="turno-card__left">
+          <div class="ticket-box">{{ turn?.date?.dateCode }}</div>
+
+          <div class="turno-time">
+            <span class="turno-time__icon">🕒</span>
+            <span>{{ turn?.date?.dateTime?.substr(11, 5) }}</span>
+          </div>
+
+          <div class="turno-info">
+            <h4>{{ (turn?.date?.nameClient == '') ? 'Sin cliente Asignado' : turn?.date?.nameClient }}</h4>
+            <p>{{ userLogged?.department?.name }}</p>
+          </div>
+        </div>
+
+        <div class="turno-card__center">
+            @if(turn?.date?.nameClient === ''){
+                <span class="status-badge status-badge--unassigned">Sin asignar</span>
+            }
+            @else{
+                @if(turn?.state?.id == 7){
+                    <span class="status-badge status-badge--attention">En atención</span>
+                }
+                @else{
+                    <span class="status-badge status-badge--pending">Pendiente</span>
+                }
+            }
+        </div>
+
+        <div class="turno-card__right">
+            @if(turn?.date?.nameClient === ''){
+                <button class="btn btn-warning" type="button" (click)="openAssignClientModal(turn?.date)">Asignar cliente</button>
+                <button class="btn btn-outline-danger" type="button" (click)="openConfirmModal(turn, 'discard')">Descartar</button>
+            }
+            @else{
+                @if(turn?.state?.id != 7){
+                    <button class="btn btn-primary status-badge--empty" type="button" (click)="openConfirmModal(turn, 'empty')">Vaciar cita</button>
+                    <button class="btn btn-primary" type="button" (click)="callTurn(turn)">Llamar</button>
+                }
+                <button class="btn btn-outline-danger" type="button" (click)="openConfirmModal(turn, 'discard')">Descartar</button>
+                @if(turn?.state?.id == 7){
+                    <button class="btn btn-outline-success" type="button" (click)="openConfirmModal(turn, 'finish')">Finalizar</button>
+                }
+            }
+          
+        </div>
+      </div>   
+    }
+
+    @if (turnsList.length == 0) {
+        <p>No hay turnos disponibles.</p>
+    }
+
+    </div>
+  </div>
+</div>
+
+@if (showAssignModal) {
+    <div class="modal-overlay">
+        <div class="assign-modal">
+
+            <div class="assign-modal__header">
+            <div>
+                <h2>Asignar Cliente a Cita</h2>
+                <p>A007</p>
+            </div>
+
+            <button class="assign-modal__close" type="button" aria-label="Cerrar" (click)="closeAssignModal()">
+                ✕
+            </button>
+            </div>
+
+            <div class="assign-modal__body">
+            <div class="form-group">
+                <label for="clientName">Nombre del Cliente</label>
+                <input
+                id="clientName"
+                type="text"
+                placeholder="Escriba el nombre completo del cliente"
+                (keyup)="setClient($event)"
+                />
+            </div>
+
+            <div class="appointment-details">
+                <span class="appointment-details__title">DETALLES DE LA CITA</span>
+
+                <div class="appointment-details__grid">
+                <div class="detail-item">
+                    <span class="detail-item__label">Departamento</span>
+                    <strong>{{ userLogged?.department?.name }}</strong>
+                </div>
+
+                <div class="detail-item">
+                    <span class="detail-item__label">Fecha</span>
+                    <strong>{{ dateTimeModalStr }}</strong>
+                </div>
+
+                <div class="detail-item">
+                    <span class="detail-item__label">Hora</span>
+                    <strong>{{ hourAssignesStr }}</strong>
+                </div>
+                </div>
+            </div>
+            </div>
+
+            <div class="assign-modal__footer">
+            <button type="button" class="btn btn-secondary" (click)="closeAssignModal()">Cancelar</button>
+            <button type="button" class="btn btn-primary" (click)="setClientToDate()" [disabled]="nameClientAssigned == ''">Asignar Cliente</button>
+            </div>
+
+        </div>
+        </div>
+}
+
+@if (showConfirmModal) {
+  <div class="modal-overlay">
+    <div class="confirm-modal">
+      <div class="confirm-modal__header">
+        <div>
+          <h2>
+            {{ confirmActionType === 'finish' ? 'Confirmar finalización' : 'Confirmar descarte' }}
+          </h2>
+          <p>
+            {{ selectedTurn?.date?.dateCode }} · {{ selectedTurn?.date?.dateTime?.slice(11, 16) }}
+          </p>
+        </div>
+
+        <button
+          class="confirm-modal__close"
+          type="button"
+          aria-label="Cerrar"
+          (click)="closeConfirmModal()">
+          ✕
+        </button>
+      </div>
+
+      <div class="confirm-modal__body">
+        @if (confirmActionType === 'finish') {
+          <p>
+            Vas a marcar este turno como <strong>finalizado</strong>.
+          </p>
+        }
+
+        @if (confirmActionType === 'discard') {
+          <p>
+            Vas a marcar este turno como <strong>descartado</strong>.
+          </p>
+        }
+
+        @if (confirmActionType === 'empty') {
+          <p>
+            Vas a marcar <strong>vaciar</strong> el cliente del turno.
+          </p>
+        }
+
+        <div class="confirm-modal__details">
+          <div class="confirm-detail-item">
+            <span class="confirm-detail-item__label">Cliente</span>
+            <strong>
+              {{ selectedTurn?.date?.nameClient == '' ? 'Sin cliente asignado' : selectedTurn?.date?.nameClient }}
+            </strong>
+          </div>
+
+          <div class="confirm-detail-item">
+            <span class="confirm-detail-item__label">Departamento</span>
+            <strong>{{ userLogged?.department?.name }}</strong>
+          </div>
+
+          <div class="confirm-detail-item">
+            <span class="confirm-detail-item__label">Hora</span>
+            <strong>{{ selectedTurn?.date?.dateTime?.slice(11, 16) }}</strong>
+          </div>
+        </div>
+
+        <p class="confirm-modal__warning">
+          Esta acción afectará al estado operativo del turno.
+        </p>
+      </div>
+
+      <div class="confirm-modal__footer">
+        <button type="button" class="btn btn-secondary" (click)="closeConfirmModal()">
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          [class]="confirmActionType === 'finish' ? 'btn btn-success' : 'btn btn-danger'"
+          (click)="confirmTurnAction()">
+          {{ confirmActionType === 'finish' ? 'Sí, finalizar' : ((confirmActionType === 'discard') ? 'Sí, descartar' : 'Si, vaciar') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

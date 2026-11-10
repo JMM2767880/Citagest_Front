@@ -1,0 +1,321 @@
+
+<div class="container">
+    <!-- Calendario -->
+    <div class="calendar-card">
+        <div class="calendar-header">
+        <div class="month-selector">
+            <select id="month-select" [(ngModel)]="selectedMonth" (ngModelChange)="changeFilterDate()">
+            @for (month of monthSelect; track $index) {
+                <option [ngValue]="month.value">{{ month.month }}</option>
+            }
+            </select>
+
+            <select id="year-select" [(ngModel)]="selectedYear" (ngModelChange)="changeFilterDate()">
+                @for (year of yearsSelect; track $index) {
+                    <option [ngValue]="year">{{ year }}</option>
+                }
+            </select>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+            <div class="legend-badge total">#</div>
+            <span>Total</span>
+            </div>
+            <div class="legend-item">
+            <div class="legend-badge assigned">#</div>
+            <span>Asignadas</span>
+            </div>
+            <div class="legend-item">
+            <div class="legend-badge free">#</div>
+            <span>Libres</span>
+            </div>
+        </div>
+
+        <div class="calendar-nav">
+            <button (click)="getCalendar('prev')">Anterior</button>
+            <button (click)="getCalendar('next')">Siguiente</button>
+        </div>
+        </div>
+
+        <div class="calendar-body">
+        <div class="weekdays">
+            <div class="weekday">Lun</div>
+            <div class="weekday">Mar</div>
+            <div class="weekday">Mié</div>
+            <div class="weekday">Jue</div>
+            <div class="weekday">Vie</div>
+            <div class="weekday">Sáb</div>
+            <div class="weekday">Dom</div>
+        </div>
+
+        <div class="days-grid" id="days-grid">
+            @for (week of calendarPrint; track $index; let weekIndex = $index) {
+                @for (day of week; track $index; let dayIndex = $index) {
+                    <div class="day-cell">
+                        <span class="day-number">{{ day?.day }}</span>
+                        <div class="appointment-badges">
+                            @if (day?.totalDates != null && day?.totalDates != 0) {
+                                <button class="appointment-badge total" (click)="getDatesByDateTime(day?.date + 'T00:00', 'total')">{{ day?.totalDates }}</button>
+                                <button class="appointment-badge assigned" (click)="getDatesByDateTime(day?.date + 'T00:00', 'assigned')">{{ day?.assignedDates }}</button>
+                                <button class="appointment-badge free" (click)="getDatesByDateTime(day?.date + 'T00:00', 'free')">{{ day?.freeDates }}</button>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+        </div>
+    </div>
+</div>
+
+@if (showTotalDatesModal) {
+    <div id="modal-total">
+        <div class="modal-overlay">
+            <div class="modal-container">
+                
+                <!-- Header -->
+                <div class="modal-header">
+                <div class="modal-header-text">
+                    <h2>{{ typeDatesModalStr }} - {{ dateTimeModalStr }}</h2>
+                    <p>{{ datesShowModal.length }} citas</p>
+                </div>
+
+                <button class="modal-close" type="button" aria-label="Cerrar" (click)="closeTotalModal()">
+                    ✕
+                </button>
+                </div>
+
+                <!-- Body -->
+                <div class="modal-body">
+                <div class="appointment-list">
+
+                    @for (dt of datesShowModal; track $index) {
+                        <div class="appointment-card" [class.free-date]="dt.nameClient == ''">
+                            <div class="appointment-left">
+                                <div class="appointment-code">{{ dt.dateCode }}</div>
+
+                                <div class="appointment-time">
+                                <span class="time-icon">🕒</span>
+                                <span>{{ dt.dateTime.substring(11, 16) }}</span>
+                                </div>
+
+                                <div class="appointment-info">
+                                <h3>{{ dt.nameClient != '' ? dt.nameClient : this.userLogged?.department?.name }}</h3>
+                                <p>{{ dt.nameClient == '' ? 'Disponible para reservar.' : this.userLogged?.department?.name }}</p>
+                                </div>
+                            </div>
+
+                            <div class="appointment-right">
+                                @if (dt.nameClient == '') {
+                                    <button type="button" class="btn-details" (click)="openAssignClientModal(dt)">Asignar cliente</button>
+                                }
+                                @if (dt.nameClient != '') {
+                                    <button type="button" class="btn-details" (click)="openConfirmModal(dt)">Vaciar cliente</button>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @if (datesShowModal.length == 0) {
+                        <p>No hay citas disponibles.</p>
+                    }
+                    
+                </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="modal-footer">
+                <button type="button" class="btn-secondary" (click)="closeTotalModal()">Cerrar</button>
+                <!--<button type="button" class="btn-primary">Crear Nueva Cita</button>-->
+                </div>
+            </div>
+            </div>
+    </div>
+}
+
+@if (showAssignModal) {
+    <div class="modal-overlay">
+        <div class="assign-modal">
+
+            <div class="assign-modal__header">
+            <div>
+                <h2>Asignar Cliente a Cita</h2>
+                <p>A007</p>
+            </div>
+
+            <button class="assign-modal__close" type="button" aria-label="Cerrar" (click)="closeAssignModal()">
+                ✕
+            </button>
+            </div>
+
+            <div class="assign-modal__body">
+            <div class="form-group">
+                <label for="clientName">Nombre del Cliente</label>
+                <input
+                id="clientName"
+                type="text"
+                placeholder="Escriba el nombre completo del cliente"
+                (keyup)="setClient($event)"
+                />
+            </div>
+
+            <div class="appointment-details">
+                <span class="appointment-details__title">DETALLES DE LA CITA</span>
+
+                <div class="appointment-details__grid">
+                <div class="detail-item">
+                    <span class="detail-item__label">Departamento</span>
+                    <strong>{{ userLogged?.department?.name }}</strong>
+                </div>
+
+                <div class="detail-item">
+                    <span class="detail-item__label">Fecha</span>
+                    <strong>{{ dateTimeModalStr }}</strong>
+                </div>
+
+                <div class="detail-item">
+                    <span class="detail-item__label">Hora</span>
+                    <strong>{{ hourAssignesStr }}</strong>
+                </div>
+                </div>
+            </div>
+            </div>
+
+            <div class="assign-modal__footer">
+            <button type="button" class="btn btn-secondary" (click)="closeAssignModal()">Cancelar</button>
+            <button type="button" class="btn btn-primary" (click)="setClientToDate()" [disabled]="nameClientAssigned == ''">Asignar Cliente</button>
+            </div>
+        </div>
+        </div>
+}
+
+@if (showConfirmModal) {
+  <div class="modal-overlay">
+    <div class="confirm-modal">
+      <div class="confirm-modal__header">
+        <div>
+          <h2>
+            Confirmar vaciar cliente
+          </h2>
+          <p>
+            {{ selectedDate?.dateCode }} · {{ selectedDate?.dateTime?.slice(11, 16) }}
+          </p>
+        </div>
+
+        <button
+          class="confirm-modal__close"
+          type="button"
+          aria-label="Cerrar"
+          (click)="closeConfirmModal()">
+          ✕
+        </button>
+      </div>
+
+      <div class="confirm-modal__body">
+        <p>Vas a marcar <strong>vaciar</strong> el cliente del turno.</p>
+        
+        <div class="confirm-modal__details">
+          <div class="confirm-detail-item">
+            <span class="confirm-detail-item__label">Cliente</span>
+            <strong>
+              {{ selectedDate?.nameClient }}
+            </strong>
+          </div>
+
+          <div class="confirm-detail-item">
+            <span class="confirm-detail-item__label">Departamento</span>
+            <strong>{{ userLogged?.department?.name }}</strong>
+          </div>
+
+          <div class="confirm-detail-item">
+            <span class="confirm-detail-item__label">Hora</span>
+            <strong>{{ selectedDate?.dateTime?.slice(11, 16) }}</strong>
+          </div>
+        </div>
+
+        <p class="confirm-modal__warning">
+          Esta acción afectará al estado operativo de la cita.
+        </p>
+      </div>
+
+      <div class="confirm-modal__footer">
+        <button type="button" class="btn btn-secondary" (click)="closeConfirmModal()">
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          [class]="'btn btn-danger'"
+          (click)="confirmTurnAction()">
+          Si, vaciar
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showSearchDatesModal) {
+    <div id="modal-total">
+        <div class="modal-overlay">
+            <div class="modal-container">
+                
+                <!-- Header -->
+                <div class="modal-header">
+                <div class="modal-header-text">
+                    <h2>{{ typeDatesModalStr }} - {{ dateTimeModalStr }}</h2>
+                    <p>{{ datesShowModal.length }} citas</p>
+                </div>
+
+                <button class="modal-close" type="button" aria-label="Cerrar" (click)="closeTotalModal()">
+                    ✕
+                </button>
+                </div>
+
+                <!-- Body -->
+                <div class="modal-body">
+                <div class="appointment-list">
+
+                    @for (dt of searchDatesList; track $index) {
+                        <div class="appointment-card" [class.free-date]="dt.nameClient == ''">
+                            <div class="appointment-left">
+                                <div class="appointment-code">{{ dt.dateCode }}</div>
+
+                                <div class="appointment-time">
+                                <span class="time-icon">🕒</span>
+                                <span>{{ dt.dateTime.substring(11, 16) }}</span>
+                                </div>
+
+                                <div class="appointment-info">
+                                <h3>{{ dt.nameClient != '' ? dt.nameClient : this.userLogged?.department?.name }}</h3>
+                                <p>{{ dt.nameClient == '' ? 'Disponible para reservar.' : this.userLogged?.department?.name }}</p>
+                                </div>
+                            </div>
+
+                            <div class="appointment-right">
+                                @if (dt.nameClient == '') {
+                                    <button type="button" class="btn-details" (click)="openAssignClientModal(dt)">Asignar cliente</button>
+                                }
+                                @if (dt.nameClient != '') {
+                                    <button type="button" class="btn-details" (click)="openConfirmModal(dt)">Vaciar cliente</button>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @if (datesShowModal.length == 0) {
+                        <p>No hay citas disponibles.</p>
+                    }
+                    
+                </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="modal-footer">
+                <button type="button" class="btn-secondary" (click)="closeTotalModal()">Cerrar</button>
+                <!--<button type="button" class="btn-primary">Crear Nueva Cita</button>-->
+                </div>
+            </div>
+            </div>
+    </div>
+}

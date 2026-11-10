@@ -1,0 +1,623 @@
+
+<!-- CONTENIDO DE PLANTILLAS -->
+<div class="templates-content">
+    <!-- HEADER -->
+    <div class="templates-header">
+        <div>
+        <h2>Plantillas de Citas</h2>
+        <p>Configura tus horarios semanales y aplícalos al calendario</p>
+        </div>
+
+        <div class="header-actions">
+        <!-- Selector de plantilla -->
+        @if (!isSavedTemplate) {
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 64 64"
+                width="50"
+                height="50"
+                fill="none"
+                id="not-saved-template-svg"
+                title="Plantilla sin guardar"
+                >
+                <!-- Documento -->
+                <path
+                    d="M20 8h18l10 10v30a8 8 0 0 1-8 8H20a8 8 0 0 1-8-8V16a8 8 0 0 1 8-8Z"
+                    fill="#FFF7ED"
+                    stroke="#F59E0B"
+                    stroke-width="2.5"
+                    stroke-linejoin="round"
+                />
+
+                <!-- Esquina doblada -->
+                <path
+                    d="M38 8v10h10"
+                    stroke="#F59E0B"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+
+                <!-- Líneas internas -->
+                <path
+                    d="M22 26h16"
+                    stroke="#F59E0B"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    opacity="0.9"
+                />
+                <path
+                    d="M22 34h16"
+                    stroke="#F59E0B"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    opacity="0.7"
+                />
+                <path
+                    d="M22 42h10"
+                    stroke="#F59E0B"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    opacity="0.5"
+                />
+
+                <!-- Badge aviso -->
+                <circle
+                    cx="46"
+                    cy="46"
+                    r="10"
+                    fill="#F59E0B"
+                />
+                <path
+                    d="M46 41v6"
+                    stroke="white"
+                    stroke-width="2.8"
+                    stroke-linecap="round"
+                />
+                <circle
+                    cx="46"
+                    cy="50"
+                    r="1.6"
+                    fill="white"
+                />
+                </svg>
+        }
+        <div class="template-selector">
+            <button class="template-btn" [class.active]="selectedTemplate == 1" (click)="changeTemplate($event, 1)">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Plantilla 1
+            </button>
+            <button class="template-btn" [class.active]="selectedTemplate == 2" (click)="changeTemplate($event, 2)">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Plantilla 2
+            </button>
+        </div>
+        <div class="div-input-time-sequence">
+            <label for="input-time-sequence">Tiempo entre slots: </label>
+            <select [(ngModel)]="timeSequence" name="input-time-sequence" id="input-time-sequence" class="input-time-sequence">
+                @for (ts of timeSequencesList; track $index) {
+                    <option [value]="ts.value" [selected]="timeSequence.value == ts.value">{{ ts.text }}</option>
+                }
+            </select>
+        </div>
+        <div class="div-input-time-sequence">
+            <label for="start-sequence">Hora de inicio de los slots: </label>
+            <input type="time" id="start-sequence" [(ngModel)]="startSequence" class="input-time-sequence">
+        </div>
+
+        <!-- Botón guardar -->
+        <button class="action-btn save" (click)="addTemplatesDates($event)">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            Guardar Plantilla
+        </button>
+
+        <!-- Botón limpiar -->
+        <!--<button class="action-btn clear">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            Limpiar Plantilla
+        </button>-->
+        </div>
+    </div>
+
+    <!-- INFORMACIÓN DE PLANTILLA -->
+    <div class="template-info">
+        <div class="template-info-left">
+        <div class="info-item">
+            <p>Plantilla Activa</p>
+            <p>Plantilla {{ selectedTemplate }}</p>
+        </div>
+        <div class="info-divider"></div>
+        <div class="info-item">
+            <p>Total de Slots</p>
+            <p>{{ totalSlotsGlobal }} horarios</p>
+        </div>
+        <div class="info-divider"></div>
+        <div class="info-item">
+            <p>Departamento</p>
+            <p>{{ userLogged?.department?.name || '' }}</p>
+        </div>
+        </div>
+
+        <button type="button" (click)="openModalCreateDate()" class="apply-btn">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        Abrir Calendario
+        </button>
+    </div>
+
+    <!-- CALENDARIO SEMANAL -->
+    <div class="week-calendar">
+        <!-- LUNES -->
+        <div class="day-column">
+        <div class="day-header">
+            <h3>Lunes</h3>
+            <p>{{ templateWeekList[1].length }} {{ templateWeekList[1].length == 1 ? 'slot' : 'slots' }}</p>
+        </div>
+        <div class="time-slots">
+            @if (templateWeekList[1].length != 0) {
+                @for (td of templateWeekList[1]; track $index) {
+                    <div class="time-slot">
+                        <input type="time" [value]="td.hour" [readOnly]="true">
+                        <button class="delete-btn" (click)="deleteTemplateDate(1, td.hour)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
+                }
+                <button class="add-time-btn" (click)="addTemplateDate($event, 1)">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Añadir Hora
+                </button>
+            }@else {
+                <div class="time-slots empty">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p>Sin horarios</p>
+                </div>
+                <div style="padding: 0 0.75rem 0.75rem;">
+                    <button class="add-time-btn" (click)="addTemplateDate($event, 1)">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Añadir Hora
+                    </button>
+                </div>
+            }
+        </div>
+        </div>
+
+        <!-- MARTES -->
+        <div class="day-column">
+        <div class="day-header">
+            <h3>Martes</h3>
+            <p>{{ templateWeekList[2].length }} {{ templateWeekList[2].length == 1 ? 'slot' : 'slots' }}</p>
+        </div>
+        <div class="time-slots">
+            @if (templateWeekList[2].length != 0) {
+                @for (td of templateWeekList[2]; track $index) {
+                    <div class="time-slot">
+                        <input type="time" [value]="td.hour" [readOnly]="true">
+                        <button class="delete-btn" (click)="deleteTemplateDate(2, td.hour)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
+                }
+                <button class="add-time-btn" (click)="addTemplateDate($event, 2)">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Añadir Hora
+                </button>
+            }@else {
+                <div class="time-slots empty">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p>Sin horarios</p>
+                </div>
+                <div style="padding: 0 0.75rem 0.75rem;">
+                    <button class="add-time-btn" (click)="addTemplateDate($event, 2)">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Añadir Hora
+                    </button>
+                </div>
+            }
+        </div>
+        </div>
+
+        <!-- MIÉRCOLES (vacío) -->
+        <div class="day-column">
+        <div class="day-header">
+            <h3>Miércoles</h3>
+            <p>{{ templateWeekList[3].length }} {{ templateWeekList[3].length == 1 ? 'slot' : 'slots' }}</p>
+        </div>
+        <div class="time-slots">
+            @if (templateWeekList[3].length != 0) {
+                @for (td of templateWeekList[3]; track $index) {
+                    <div class="time-slot">
+                        <input type="time" [value]="td.hour" [readOnly]="true">
+                        <button class="delete-btn" (click)="deleteTemplateDate(3, td.hour)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
+                }
+                <button class="add-time-btn" (click)="addTemplateDate($event, 3)">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Añadir Hora
+                </button>
+            }@else {
+                <div class="time-slots empty">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p>Sin horarios</p>
+                </div>
+                <div style="padding: 0 0.75rem 0.75rem;">
+                    <button class="add-time-btn" (click)="addTemplateDate($event, 3)">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Añadir Hora
+                    </button>
+                </div>
+            }
+        </div>
+        </div>
+
+        <!-- JUEVES -->
+        <div class="day-column">
+        <div class="day-header">
+            <h3>Jueves</h3>
+            <p>{{ templateWeekList[4].length }} {{ templateWeekList[4].length == 1 ? 'slot' : 'slots' }}</p>
+        </div>
+        <div class="time-slots">
+            @if (templateWeekList[4].length != 0) {
+                @for (td of templateWeekList[4]; track $index) {
+                    <div class="time-slot">
+                        <input type="time" [value]="td.hour" [readOnly]="true">
+                        <button class="delete-btn" (click)="deleteTemplateDate(4, td.hour)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
+                }
+                <button class="add-time-btn" (click)="addTemplateDate($event, 4)">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Añadir Hora
+                </button>
+            }@else {
+                <div class="time-slots empty">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p>Sin horarios</p>
+                </div>
+                <div style="padding: 0 0.75rem 0.75rem;">
+                    <button class="add-time-btn" (click)="addTemplateDate($event, 4)">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Añadir Hora
+                    </button>
+                </div>
+            }
+        </div>
+        </div>
+
+        <!-- VIERNES (vacío) -->
+        <div class="day-column">
+        <div class="day-header">
+            <h3>Viernes</h3>
+            <p>{{ templateWeekList[5].length }} {{ templateWeekList[5].length == 1 ? 'slot' : 'slots' }}</p>
+        </div>
+        <div class="time-slots">
+            @if (templateWeekList[5].length != 0) {
+                @for (td of templateWeekList[5]; track $index) {
+                    <div class="time-slot">
+                        <input type="time" [value]="td.hour" [readOnly]="true">
+                        <button class="delete-btn" (click)="deleteTemplateDate(5, td.hour)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
+                }
+                <button class="add-time-btn" (click)="addTemplateDate($event, 5)">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Añadir Hora
+                </button>
+            }@else {
+                <div class="time-slots empty">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p>Sin horarios</p>
+                </div>
+                <div style="padding: 0 0.75rem 0.75rem;">
+                    <button class="add-time-btn" (click)="addTemplateDate($event, 5)">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Añadir Hora
+                    </button>
+                </div>
+            }
+        </div>
+        </div>
+
+        <!-- SÁBADO (vacío) -->
+        <div class="day-column">
+        <div class="day-header">
+            <h3>Sábado</h3>
+            <p>{{ templateWeekList[6].length }} {{ templateWeekList[6].length == 1 ? 'slot' : 'slots' }}</p>
+        </div>
+        <div class="time-slots">
+            @if (templateWeekList[6].length != 0) {
+                @for (td of templateWeekList[6]; track $index) {
+                    <div class="time-slot">
+                        <input type="time" [value]="td.hour" [readOnly]="true">
+                        <button class="delete-btn" (click)="deleteTemplateDate(6, td.hour)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
+                }
+                <button class="add-time-btn" (click)="addTemplateDate($event, 6)">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Añadir Hora
+                </button>
+            }@else {
+                <div class="time-slots empty">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p>Sin horarios</p>
+                </div>
+                <div style="padding: 0 0.75rem 0.75rem;">
+                    <button class="add-time-btn" (click)="addTemplateDate($event, 6)">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Añadir Hora
+                    </button>
+                </div>
+            }
+        </div>
+        </div>
+
+        <!-- DOMINGO (vacío) -->
+        <div class="day-column">
+        <div class="day-header">
+            <h3>Domingo</h3>
+            <p>{{ templateWeekList[0].length }} {{ templateWeekList[0].length == 1 ? 'slot' : 'slots' }}</p>
+        </div>
+        <div class="time-slots">
+            @if (templateWeekList[0].length != 0) {
+                @for (td of templateWeekList[0]; track $index) {
+                    <div class="time-slot">
+                        <input type="time" [value]="td.hour" [readOnly]="true">
+                        <button class="delete-btn" (click)="deleteTemplateDate(0, td.hour)">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
+                }
+                <button class="add-time-btn" (click)="addTemplateDate($event, 0)">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Añadir Hora
+                </button>
+            }@else {
+                <div class="time-slots empty">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p>Sin horarios</p>
+                </div>
+                <div style="padding: 0 0.75rem 0.75rem;">
+                    <button class="add-time-btn" (click)="addTemplateDate($event, 0)">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Añadir Hora
+                    </button>
+                </div>
+            }
+        </div>
+        </div>
+    </div>
+</div>
+
+@if (showModalSaveTemplate) {
+    <div id="success-save-modal">
+        <div class="custom-modal">
+            <svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <!-- Círculo solo con borde -->
+                <circle cx="50" cy="50" r="45" fill="none" stroke="green" stroke-width="6"/>
+                
+                <!-- Tick -->
+                <path d="M30 52 L43 65 L70 35" 
+                    fill="none" 
+                    stroke="green" 
+                    stroke-width="6" 
+                    stroke-linecap="round" 
+                    stroke-linejoin="round"/>
+            </svg>
+            <h2>¡Plantilla guardada!</h2>
+            <p>Tu plantilla {{ selectedTemplate }} ha sido guardada correctamente</p>
+            <div class="info-template">
+                <div class="info-row">
+                    <span>Plantilla</span>
+                    <span>{{ selectedTemplate }}</span>
+                </div>
+                <div class="info-row">
+                    <span>Total de horarios</span>
+                    <span>{{ totalSlotsGlobal }}</span>
+                </div>
+                <div class="info-row">
+                    <span>Departamento</span>
+                    <span>{{ userLogged?.department?.name || '' }}</span>
+                </div>
+            </div>
+            <div class="info-modal">
+                <p>Ahora puedes aplicar esta plantilla al calendario usando el botón "Abrir Calendario"</p>
+            </div>
+            <button type="button" (click)="closeModalSaveTemplate()" class="accept-modal">Entendido</button>
+        </div>
+    </div>
+}
+
+@if (showModalCreateDate) {
+    <div id="create-dates-modal">
+        <div class="custom-modal">
+            <h2>Abrir calendario</h2>
+            <p>Tu {{ selectedTemplate }} ha sido guardada correctamente</p>
+            <div class="info-template">
+                <p><b>Resumen plantilla {{ selectedTemplate }}</b></p>
+                @for (week of templateWeekList; track $index) {
+                    @if (week.length != 0) {
+                        <div class="info-row">
+                            <span>{{ weekDaysStr[$index] }}</span>
+                            <span>{{ week.length }}</span>
+                        </div>
+                    }
+                }
+                <div class="info-row total">
+                    <span><b>Total</b></span>
+                    <span>{{ totalSlotsGlobal }} slots por semana</span>
+                </div>
+            </div>
+            <div>
+                <label for="startDate" class="block text-sm font-medium text-gray-700 mb-2">
+                    Fecha de Inicio
+                </label>
+                <input
+                    type="date"
+                    id="startDate"
+                    name="startDate"
+                    (change)="changeDate()"
+                    [(ngModel)]="startDate"
+                    class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-400"
+                />
+            </div>
+            <div>
+                <label for="finishDate" class="block text-sm font-medium text-gray-700 mb-2">
+                    Fecha de Fin
+                </label>
+                <input
+                    type="date"
+                    [(ngModel)]="finishDate"
+                    [min]="startDate"
+                    id="finishDate"
+                    name="finishDate"
+                    (change)="changeDate()"
+                    [disabled]="startDate == null"
+                    class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-400"
+                />
+            </div>
+            <div class="info-modal">
+                <p>Se crearán automáticamente todas las citas según la plantilla en el rango de fechas seleccionado.</p>
+            </div>
+            <div class="actions">
+                <button type="button" (click)="closeModalCreateDate()" class="cancel-modal">Cancelar</button>
+                <button type="button" (click)="createDates()" class="accept-modal" [disabled]="!validateCreateDates">Entendido</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (showSuccessModal) {
+  <div class="modal-overlay">
+    <div class="success-modal">
+      <button
+        class="success-modal__close"
+        type="button"
+        aria-label="Cerrar"
+        (click)="closeSuccessModal()">
+        ✕
+      </button>
+
+      <div class="success-modal__icon-wrap">
+        <div class="success-modal__icon">
+          ✓
+        </div>
+      </div>
+
+      <div class="success-modal__body">
+        <h2>Plantilla aplicada correctamente</h2>
+
+        <p class="success-modal__message">
+          Se han creado correctamente
+          <strong>{{ totalDatesCreated }}</strong>
+          {{ totalDatesCreated === 1 ? 'cita' : 'citas' }}
+          con éxito.
+        </p>
+
+        <div class="success-modal__details">
+          
+          <div class="success-detail-card">
+            <span class="success-detail-card__label">Plantilla</span>
+            <strong>{{ selectedTemplate === 1 ? 'Plantilla 1' : 'Plantilla 2' }}</strong>
+          </div>
+
+          <div class="success-detail-card">
+            <span class="success-detail-card__label">Total creadas</span>
+            <strong>{{ totalDatesCreated }}</strong>
+          </div>
+
+          <div class="success-detail-card">
+            <span class="success-detail-card__label">Departamento</span>
+            <strong>{{ userLogged?.department?.name }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="success-modal__footer">
+        <button
+          type="button"
+          class="success-btn success-btn--secondary"
+          (click)="closeSuccessModal()">
+          Cerrar
+        </button>
+
+        <button
+          type="button"
+          class="success-btn success-btn--primary"
+          (click)="closeSuccessModal()">
+          Aceptar
+        </button>
+      </div>
+    </div>
+  </div>
+}

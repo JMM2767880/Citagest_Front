@@ -1,0 +1,88 @@
+<div class="tv-screen">
+  <header class="tv-header">
+    <div class="tv-brand">
+      <h1>CitaGest</h1>
+      <p>Turnos por departamento</p>
+    </div>
+
+    <div class="tv-datetime">
+      <div class="tv-datetime__time">{{ now | date:'HH:mm' }}</div>
+      <div class="tv-datetime__date">
+        {{ now.getDate() }} de {{ monthSelect[now.getMonth()].month }} de {{ now.getFullYear() }}
+      </div>
+    </div>
+  </header>
+
+  <main class="tv-board">
+    @for (group of deskDepartment; track group.departmentDTO?.id ?? $index) {
+      <section class="tv-department">
+        <div class="tv-department__header">
+          <div>
+            <div class="tv-department__label">Departamento</div>
+            <h2>{{ group.departmentDTO?.name || 'Sin nombre' }}</h2>
+          </div>
+          <div class="tv-department__meta">
+            {{ getDepartmentPendingCount(group.turnsDeskDTOS || []) }} pendientes
+          </div>
+        </div>
+
+        <div class="tv-desks">
+          @for (turnsDesk of group.turnsDeskDTOS; track turnsDesk.desk?.id ?? $index) {
+            <article class="tv-desk" [class.tv-desk--active]="!!getDeskCurrentTurn(turnsDesk)">
+              <div class="tv-desk__header">
+                <div class="tv-desk__name">{{ turnsDesk?.desk?.name || 'Escritorio' }}</div>
+                <div class="tv-desk__counter">
+                  {{ getDeskPendingCount(turnsDesk) }} en cola
+                </div>
+              </div>
+
+              <div class="tv-desk__turn tv-desk__turn--primary">
+                <div class="tv-desk__turn-label">
+                  {{ getDeskCurrentTurn(turnsDesk) ? getTurnStateLabel(getDeskCurrentTurn(turnsDesk)) : 'Turno actual' }}
+                </div>
+                <div class="tv-desk__turn-main">
+                  <div class="tv-desk__ticket" [class.tv-desk__ticket--empty]="!getDeskCurrentTurn(turnsDesk)">
+                    {{ getDeskMainTicket(turnsDesk) }}
+                  </div>
+                  <div class="tv-desk__time">{{ getDeskMainTime(turnsDesk) }}</div>
+                </div>
+              </div>
+
+              <div class="tv-desk__pending-demo">
+                <div class="tv-desk__turn-label">Pendientes</div>
+                <div class="tv-desk__pending-list">
+                  @for (turn of getDeskPendingTurns(turnsDesk); track turn.id) {
+                    <div class="tv-desk__pending-item">
+                      <span>{{ turn?.date?.dateCode || '---' }}</span>
+                      <span>{{ formatTurnTime(turn) }}</span>
+                      <span>{{ getTurnStateLabel(turn) }}</span>
+                    </div>
+                  }
+
+                  @if (getDeskPendingTurns(turnsDesk).length === 0) {
+                    <div class="tv-desk__pending-item tv-desk__pending-item--empty">
+                      <span>---</span>
+                      <span>---</span>
+                      <span>---</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+    }
+
+    @if (deskDepartment.length === 0) {
+      <section class="tv-empty">
+        <h2>No hay escritorios habilitados</h2>
+        <p>Activa mesas para que aparezcan en esta pantalla.</p>
+      </section>
+    }
+  </main>
+
+  <footer class="tv-footer">
+    Espere a que su turno aparezca en pantalla y acuda al escritorio indicado.
+  </footer>
+</div>
