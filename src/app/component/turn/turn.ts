@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { interval, Subject } from 'rxjs';
-import { startWith, switchMap, takeUntil } from 'rxjs/operators';
+import { EMPTY, interval, merge, Subject } from 'rxjs';
+import { catchError, startWith, switchMap, takeUntil } from 'rxjs/operators';
 
 import { TurnService } from './services/turn.service';
 import { SessionService } from '../login/services/session.service';
@@ -47,6 +47,7 @@ export class TurnComponent implements OnInit, OnDestroy {
   public selectedTurn: any = null;
 
   private readonly destroy$ = new Subject<void>();
+  private readonly refresh$ = new Subject<void>();
 
   constructor(
     private readonly turnService: TurnService,
@@ -58,22 +59,32 @@ export class TurnComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.userLogged = this.sessionService.currentUser;
 
-    interval(5000)
+    merge(interval(5000), this.refresh$)
       .pipe(
         startWith(0),
-        switchMap(() => this.turnService.getDayTurn()),
+        switchMap(() =>
+          this.turnService.getDayTurn().pipe(
+            catchError((err) => {
+              console.error(err);
+              return EMPTY;
+            })
+          )
+        ),
         takeUntil(this.destroy$)
       )
       .subscribe({
         next: (response: any) => {
           this.turnsList = response ?? [];
           this.originalList = [...this.turnsList];
-          this.currentTurn = this.turnsList.find((t: any) => t.state?.id == 7) ?? null;
+
+          this.currentTurn =
+            this.turnsList.find((t: any) => t.state?.id == 7)
+            ?? null;
+
           this.stadisticTurn();
           this.cdr.markForCheck();
           this.cdr.detectChanges();
-        },
-        error: (err: any) => console.error(err)
+        }
       });
   }
 
@@ -105,6 +116,9 @@ export class TurnComponent implements OnInit, OnDestroy {
       this.dateService.setClientToDateId(this.dateAssigned).subscribe({
         next: () => {
           this.showAssignModal = false;
+          this.nameClientAssigned = '';
+          this.refresh$.next();
+          this.cdr.markForCheck();
         },
         error: (err: any) => {
           console.error(err);
@@ -115,7 +129,9 @@ export class TurnComponent implements OnInit, OnDestroy {
 
   callTurn(turnCall: any) {
     this.turnService.callTurn(turnCall).subscribe({
-      next: () => {},
+      next: () => {
+        this.refresh$.next();
+      },
       error: (err: any) => {
         console.error(err);
       }
@@ -124,7 +140,9 @@ export class TurnComponent implements OnInit, OnDestroy {
 
   finishTurn(turnFinish: any) {
     this.turnService.finishTurn(turnFinish.id).subscribe({
-      next: () => {},
+      next: () => {
+        this.refresh$.next();
+      },
       error: (err: any) => {
         console.error(err);
       }
@@ -133,7 +151,9 @@ export class TurnComponent implements OnInit, OnDestroy {
 
   discardTurn(turnDiscard: any) {
     this.turnService.discardTurn(turnDiscard.id).subscribe({
-      next: () => {},
+      next: () => {
+        this.refresh$.next();
+      },
       error: (err: any) => {
         console.error(err);
       }
@@ -176,7 +196,9 @@ export class TurnComponent implements OnInit, OnDestroy {
 
   setEmptyClientToDate(turn: any) {
     this.dateService.setEmptyClientToDate(turn.date).subscribe({
-      next: () => {},
+      next: () => {
+        this.refresh$.next();
+      },
       error: (err: any) => {
         console.error(err);
       }
